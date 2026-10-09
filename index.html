@@ -474,12 +474,13 @@ const EM=new Map();
 const emOf=r=>EM.get(r.hq||'')||null;
 const mailOf=r=>{const m=emOf(r);return m&&m.e?m.e+(m.s==='chk'?' (확인 필요)':''):''};
 /* 이메일을 못 찾은 곳은 직접 확인할 수 있게 메모를 남긴다 (웹 표·엑셀 메모 칸) */
-const noteOf=r=>{const m=emOf(r);if(!m)return'';if(m.s==='chk')return'이메일 확인 필요 (본사 홈페이지에는 없음)';if(m.e)return'';return'이메일 못 찾음'+(m.ig?' · 인스타그램 instagram.com/'+m.ig:'')};
+const noteOf=r=>{const m=emOf(r);if(!m)return'';if(m.s==='chk')return'이메일 확인 필요 (본사 홈페이지에는 없음)';if(m.e)return'';if(m.s==='form'&&m.u)return'이메일 없음 · 가맹문의 양식 '+m.u;return'이메일 못 찾음'+(m.ig?' · 인스타그램 instagram.com/'+m.ig:'')};
 const emHtml=r=>{const m=emOf(r);if(!m)return'';if(m.e)return`<span class="addr"><a href="mailto:${esc(m.e)}" style="color:var(--bar);font-weight:700">${esc(m.e)}</a>${m.s==='chk'?' <span style="color:var(--muted)">(확인 필요)</span>':''}</span>`;
 return''};
 /* 찾아봤지만 이메일을 못 찾은 곳: 본사 주소 아래에 메모로 남긴다 */
 const igLink=m=>m&&m.ig?` <a href="https://www.instagram.com/${esc(m.ig)}/" target="_blank" rel="noopener" style="color:var(--bar)">인스타 @${esc(m.ig)} ↗</a>`:'';
-const emNote=r=>{const m=emOf(r);if(!m)return'';if(m.e)return m.ig?`<span class="addr memo">${igLink(m).trim()}</span>`:'';return`<span class="addr memo" style="color:var(--bad)">이메일 못 찾음${igLink(m)}</span>`};
+const emNote=r=>{const m=emOf(r);if(!m)return'';if(m.e)return m.ig?`<span class="addr memo">${igLink(m).trim()}</span>`:'';if(m.s==='form'&&/^https?:\/\//.test(m.u||''))return`<span class="addr memo"><a href="${esc(m.u)}" target="_blank" rel="noopener" style="color:var(--bar);font-weight:700">가맹문의 양식 ↗</a>${igLink(m)}</span>`;
+return`<span class="addr memo" style="color:var(--bad)">이메일 못 찾음${igLink(m)}</span>`};
 const longHtml=l=>l?`<span class="chg" style="color:var(${l.r>0?'--good':l.r<0?'--bad':'--muted'})">${String(l.y).slice(2)}→25 ${l.r>0?'+':''}${Math.round(l.r*100)}%</span>`:'';
 function renderFlow(){renderSrc();const chk=gid('flCheck'),cnt=gid('flCount'),tb=gid('flTbl');
 /* 간단히 보기는 볼 자료가 있을 때만 (없으면 파일 버튼이 보여야 하므로) */
