@@ -38,6 +38,10 @@ td.e{word-break:break-all}
 .tag{font-size:.75rem;font-weight:700;color:var(--warn);white-space:nowrap}
 .tag.ok{color:var(--good)}
 .tbl{overflow-x:auto}
+ol.who{margin:0;padding-left:2.6em;display:flex;flex-direction:column;gap:4px;font-size:.92rem;max-height:22em;overflow:auto}
+ol.who li{word-break:break-all}
+ol.who .c{color:var(--muted);font-size:.8rem}
+.grp summary{font-weight:400;font-size:.85rem}
 details summary{cursor:pointer;font-weight:700}
 @media (max-width:520px){h1{font-size:1.4rem}td.n,th.n{display:none}}
 </style>
@@ -88,10 +92,10 @@ function render(){
   const area=$('area').value,mn=+$('mn').value||0,mxv=$('mx').value,mx=mxv===''?1e9:+mxv,ind=$('ind').value,ok=$('okOnly').checked,q=nk($('q').value);
   const L=D.filter(r=>(!area||r[4])&&r[3]>=mn&&r[3]<=mx&&(!ind||r[2]===ind)&&(!q||nk(r[0]).includes(q)||nk(r[1]).includes(q)));
   const withMail=L.filter(r=>r[5]&&(!ok||r[6])),forms=L.filter(r=>!r[5]&&r[7]);
-  const seen=new Set();ALL=[];withMail.forEach(r=>{if(!seen.has(r[5])){seen.add(r[5]);ALL.push(r[5])}});
+  const seen=new Set();ALL=[];const WHO={};withMail.forEach(r=>{if(!seen.has(r[5])){seen.add(r[5]);ALL.push(r[5]);WHO[r[5]]=[]}if(!WHO[r[5]].some(x=>x[0]===r[0]))WHO[r[5]].push(r)});
   G=[];for(let i=0;i<ALL.length;i+=50)G.push(ALL.slice(i,i+50));
   $('count').textContent=`이메일 ${fmt(ALL.length)}개 (${fmt(G.length)}묶음) · 양식만 있는 곳 ${fmt(forms.length)}곳`;
-  $('groups').innerHTML=G.length?G.map((g,i)=>`<div class="grp"><div class="row"><b>${i+1}묶음</b><span class="sub">${g.length}개</span></div><textarea readonly aria-label="${i+1}묶음 이메일">${esc(g.join(', '))}</textarea><div class="row"><button class="btn" type="button" data-i="${i}">복사</button><a class="btn ghost" href="mailto:?bcc=${encodeURIComponent(g.join(','))}">메일 쓰기 (숨은참조)</a><span class="msg" id="m${i}" role="status"></span></div></div>`).join(''):'<p class="sub">이 조건에는 이메일이 있는 본사가 없습니다. 가맹점 범위나 업종을 넓혀 보세요.</p>';
+  $('groups').innerHTML=G.length?G.map((g,i)=>`<div class="grp"><div class="row"><b>${i+1}묶음</b><span class="sub">${g.length}개</span></div><ol class="who" start="${i*50+1}">${g.map(e=>{const rs=WHO[e];return`<li><b>${esc(rs.map(r=>r[0]).join(' · '))}</b> <span class="c">${esc(rs[0][2])} · 가맹점 ${fmt(rs[0][3])}개</span> — <a href="mailto:${esc(e)}">${esc(e)}</a>${rs[0][6]?'':' <span class="tag">확인 필요</span>'}</li>`}).join('')}</ol><details><summary class="sub">이메일 주소만 보기 (복사용)</summary><textarea readonly aria-label="${i+1}묶음 이메일">${esc(g.join(', '))}</textarea></details><div class="row"><button class="btn" type="button" data-i="${i}">복사</button><a class="btn ghost" href="mailto:?bcc=${encodeURIComponent(g.join(','))}">메일 쓰기 (숨은참조)</a><span class="msg" id="m${i}" role="status"></span></div></div>`).join(''):'<p class="sub">이 조건에는 이메일이 있는 본사가 없습니다. 가맹점 범위나 업종을 넓혀 보세요.</p>';
   $('groups').querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>copy(G[+b.dataset.i].join(', '),$('m'+b.dataset.i)));
   $('listSum').textContent=`본사 목록 보기 (${fmt(withMail.length)}곳)`;
   $('tb').innerHTML=withMail.slice(0,1500).map(r=>`<tr><td>${esc(r[0])}<span class="c">${esc(r[1])}</span></td><td>${esc(r[2])}</td><td class="n">${fmt(r[3])}</td><td class="e"><a href="mailto:${esc(r[5])}">${esc(r[5])}</a> ${r[6]?'<span class="tag ok">확인됨</span>':'<span class="tag">확인 필요</span>'}</td></tr>`).join('');
