@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>본사 메일 보내기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#f7f7f4;--surface:#fdfdfb;--ink:#14140f;--ink-2:#55544e;--muted:#8a8880;--ring:rgba(20,20,15,.12);--grid:#e4e3dc;--accent:#1c5cab;--good:#006300;--warn:#a05a00}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111110;--surface:#1a1a19;--ink:#f4f4f0;--ink-2:#c3c2b7;--muted:#8f8d85;--ring:rgba(255,255,255,.12);--grid:#2c2c2a;--accent:#5598e7;--good:#3fbf3f;--warn:#e0a050}}
+:root[data-theme="dark"]{--bg:#111110;--surface:#1a1a19;--ink:#f4f4f0;--ink-2:#c3c2b7;--muted:#8f8d85;--ring:rgba(255,255,255,.12);--grid:#2c2c2a;--accent:#5598e7;--good:#3fbf3f;--warn:#e0a050}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans KR",system-ui,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 64px;display:flex;flex-direction:column;gap:20px}
+h1{font-size:1.7rem;margin:0}
+.sub{color:var(--ink-2);margin:0;font-size:.95rem}
+a{color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.flt{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.flt label{display:inline-flex;align-items:center;gap:6px;font-size:.95rem}
+.flt input,.flt select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--ring);border-radius:8px;padding:6px 10px}
+.flt input[type=number]{width:5em}
+.flt input[type=checkbox]{width:18px;height:18px}
+.big{font-size:1.15rem;font-weight:700}
+.btn{font:inherit;font-weight:700;border:0;border-radius:999px;padding:10px 20px;cursor:pointer;background:var(--accent);color:#fff;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--ink);border:1px solid var(--ring)}
+.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.grp{border:1px solid var(--ring);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+textarea{width:100%;min-height:4.5em;font:inherit;font-size:.85rem;color:var(--ink);background:var(--surface);border:1px solid var(--ring);border-radius:8px;padding:8px;resize:vertical}
+.msg{color:var(--good);font-size:.9rem;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th{text-align:left;color:var(--muted);font-size:.8rem;font-weight:700;padding:6px;border-bottom:1px solid var(--grid)}
+td{padding:7px 6px;border-bottom:1px solid var(--grid);vertical-align:top}
+td .c{display:block;color:var(--muted);font-size:.8rem}
+td.e{word-break:break-all}
+.tag{font-size:.75rem;font-weight:700;color:var(--warn);white-space:nowrap}
+.tag.ok{color:var(--good)}
+.tbl{overflow-x:auto}
+details summary{cursor:pointer;font-weight:700}
+@media (max-width:520px){h1{font-size:1.4rem}td.n,th.n{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>본사 메일 보내기</h1>
+    <p class="sub">조건을 고르면 그 본사들의 이메일이 50개씩 묶여 나옵니다. <b>복사</b>를 눌러 메일 쓰기 화면의 <b>숨은참조</b> 칸에 붙여 넣거나, <b>메일 쓰기</b>를 누르세요. 받는 사람끼리는 서로의 주소가 보이지 않습니다.</p>
+    <p class="sub"><a href="./">← 전체 표 보기</a> · <span id="asof"></span></p>
+  </header>
+
+  <section class="card" aria-label="조건">
+    <div class="flt">
+      <label>지역 <select id="area"><option value="sg">서울·경기</option><option value="">전체</option></select></label>
+      <label>가맹점 <input id="mn" type="number" min="0" value="5"> ~ <input id="mx" type="number" min="0" value="200">개</label>
+      <label>업종 <select id="ind"><option value="">전체</option></select></label>
+      <label><input id="okOnly" type="checkbox"> 확인된 이메일만</label>
+      <label>검색 <input id="q" type="search" placeholder="브랜드·본사 이름"></label>
+    </div>
+    <p class="big" id="count" role="status"></p>
+  </section>
+
+  <section class="card" aria-label="메일 묶음">
+    <div class="row"><button class="btn ghost" type="button" id="copyAll">이메일 전부 복사</button><span class="msg" id="allMsg" role="status"></span></div>
+    <div id="groups" style="display:flex;flex-direction:column;gap:12px"></div>
+  </section>
+
+  <section class="card" aria-label="목록">
+    <details>
+      <summary id="listSum">본사 목록 보기</summary>
+      <div class="tbl"><table><thead><tr><th>브랜드 · 본사</th><th>업종</th><th class="n">가맹점</th><th>이메일</th></tr></thead><tbody id="tb"></tbody></table></div>
+    </details>
+    <details>
+      <summary id="formSum">이메일 없이 가맹문의 양식만 있는 곳</summary>
+      <div class="tbl"><table><thead><tr><th>브랜드 · 본사</th><th>업종</th><th>전화</th><th>문의 양식</th></tr></thead><tbody id="tf"></tbody></table></div>
+    </details>
+  </section>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=n=>Number(n||0).toLocaleString('ko-KR');
+const nk=s=>String(s||'').replace(/\s/g,'').toLowerCase();
+let D=[],G=[],ALL=[];
+async function copy(text,msgEl){try{await navigator.clipboard.writeText(text);msgEl.textContent='복사했습니다. 숨은참조 칸에 붙여 넣으세요.'}catch(e){const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();try{document.execCommand('copy');msgEl.textContent='복사했습니다.'}catch(e2){msgEl.textContent='복사하지 못했습니다. 위 칸을 길게 눌러 복사하세요.'}t.remove()}setTimeout(()=>msgEl.textContent='',4000)}
+function render(){
+  const area=$('area').value,mn=+$('mn').value||0,mxv=$('mx').value,mx=mxv===''?1e9:+mxv,ind=$('ind').value,ok=$('okOnly').checked,q=nk($('q').value);
+  const L=D.filter(r=>(!area||r[4])&&r[3]>=mn&&r[3]<=mx&&(!ind||r[2]===ind)&&(!q||nk(r[0]).includes(q)||nk(r[1]).includes(q)));
+  const withMail=L.filter(r=>r[5]&&(!ok||r[6])),forms=L.filter(r=>!r[5]&&r[7]);
+  const seen=new Set();ALL=[];withMail.forEach(r=>{if(!seen.has(r[5])){seen.add(r[5]);ALL.push(r[5])}});
+  G=[];for(let i=0;i<ALL.length;i+=50)G.push(ALL.slice(i,i+50));
+  $('count').textContent=`이메일 ${fmt(ALL.length)}개 (${fmt(G.length)}묶음) · 양식만 있는 곳 ${fmt(forms.length)}곳`;
+  $('groups').innerHTML=G.length?G.map((g,i)=>`<div class="grp"><div class="row"><b>${i+1}묶음</b><span class="sub">${g.length}개</span></div><textarea readonly aria-label="${i+1}묶음 이메일">${esc(g.join(', '))}</textarea><div class="row"><button class="btn" type="button" data-i="${i}">복사</button><a class="btn ghost" href="mailto:?bcc=${encodeURIComponent(g.join(','))}">메일 쓰기 (숨은참조)</a><span class="msg" id="m${i}" role="status"></span></div></div>`).join(''):'<p class="sub">이 조건에는 이메일이 있는 본사가 없습니다. 가맹점 범위나 업종을 넓혀 보세요.</p>';
+  $('groups').querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>copy(G[+b.dataset.i].join(', '),$('m'+b.dataset.i)));
+  $('listSum').textContent=`본사 목록 보기 (${fmt(withMail.length)}곳)`;
+  $('tb').innerHTML=withMail.slice(0,1500).map(r=>`<tr><td>${esc(r[0])}<span class="c">${esc(r[1])}</span></td><td>${esc(r[2])}</td><td class="n">${fmt(r[3])}</td><td class="e"><a href="mailto:${esc(r[5])}">${esc(r[5])}</a> ${r[6]?'<span class="tag ok">확인됨</span>':'<span class="tag">확인 필요</span>'}</td></tr>`).join('');
+  $('formSum').textContent=`이메일 없이 가맹문의 양식만 있는 곳 (${fmt(forms.length)}곳)`;
+  $('tf').innerHTML=forms.slice(0,1500).map(r=>`<tr><td>${esc(r[0])}<span class="c">${esc(r[1])}</span></td><td>${esc(r[2])}</td><td style="white-space:nowrap">${esc(r[8]||'')}</td><td><a href="${esc(r[7])}" target="_blank" rel="noopener">문의 양식 ↗</a></td></tr>`).join('');
+}
+$('copyAll').onclick=()=>copy(ALL.join(', '),$('allMsg'));
+['area','mn','mx','ind','okOnly'].forEach(id=>$(id).addEventListener('change',render));
+let t;$('q').addEventListener('input',()=>{clearTimeout(t);t=setTimeout(render,200)});
+fetch('mail-data.json').then(r=>r.json()).then(j=>{D=j.rows;$('asof').textContent='자료 기준일 '+(j.at||'');
+  const inds=[...new Set(D.map(r=>r[2]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));$('ind').innerHTML='<option value="">전체</option>'+inds.map(i=>`<option>${esc(i)}</option>`).join('');render()})
+  .catch(()=>{$('count').textContent='자료를 불러오지 못했습니다. 새로고침해 주세요.'});
+</script>
+</body>
+</html>
